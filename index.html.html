@@ -1,0 +1,2622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>文创工坊</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js">
+    </script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', serif;
+            background: #FDF8F0;
+            background-image: radial-gradient(circle at 10% 20%, rgba(212, 177, 91, 0.08) 0%, rgba(195, 39, 43, 0.02) 100%);
+            min-height: 100vh;
+        }
+
+        .workshop-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #C3272B;
+            padding-bottom: 15px;
+        }
+
+        .title-section h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #C3272B, #D4B15B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .main-workspace {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .library-panel {
+            width: 280px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            height: 80vh;
+            overflow-y: auto;
+        }
+
+        .material-tag {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            z-index: 2;
+        }
+
+        .tag-heritage {
+            background: #C3272B;
+        }
+
+        .tag-master {
+            background: #D4B15B;
+        }
+
+        .tag-limited {
+            background: #2F5D3A;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #C3272B;
+            margin: 15px 0 10px;
+            border-left: 4px solid #C3272B;
+            padding-left: 10px;
+        }
+
+        .upload-area {
+            background: #FFF9F0;
+            border: 1px dashed #D4B15B;
+            border-radius: 16px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #FFF0E0;
+            border-color: #C3272B;
+        }
+
+        .upload-area i {
+            font-size: 24px;
+            color: #C3272B;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .clip-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .material-item {
+            background: #FFF9F0;
+            border: 1px solid #F0E2CF;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .material-item:hover {
+            border-color: #C3272B;
+            transform: translateY(-3px);
+            background: #FFF;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .material-img {
+            width: 100%;
+            height: 80%;
+            object-fit: contain;
+            pointer-events: none;
+            background: #f4e9db;
+            border-radius: 8px;
+        }
+
+        .material-label {
+            font-size: 12px;
+            color: #5c3e1f;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        .canvas-area {
+            flex: 1;
+            min-width: 600px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            background: #F0F0F0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .right-panels {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .property-panel {
+            width: 100%;
+            background: rgba(255, 250, 240, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(212, 177, 91, 0.3);
+        }
+
+        .prop-group {
+            margin-bottom: 20px;
+        }
+
+        .prop-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #5e3a22;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #C3272B, #D4B15B);
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #C3272B;
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: white;
+            border: 2px solid #E2D8CC;
+        }
+
+        select,
+        .platform-input {
+            width: 100%;
+            height: 42px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: white;
+            padding: 0 12px;
+            font-size: 14px;
+            border: 2px solid #E2D8CC;
+            transition: 0.3s;
+        }
+
+        .platform-input:focus,
+        select:focus {
+            border-color: #C3272B;
+            outline: none;
+        }
+
+        .platform-textarea {
+            width: 100%;
+            min-height: 80px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: white;
+            border: 2px solid #E2D8CC;
+            resize: none;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+
+        .platform-textarea:focus {
+            border-color: #C3272B;
+            outline: none;
+        }
+
+        .price-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #C3272B;
+            text-align: center;
+            padding: 10px;
+            background: #FFF9F0;
+            border-radius: 12px;
+            border: 1px solid #D4B15B;
+        }
+
+        .toolbar-row {
+            margin-top: 15px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            background: #fff;
+            border: 1px solid #E2D8CC;
+            color: #5a3e2b;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #FFF5E6;
+            border-color: #C3272B;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.active {
+            background: #C3272B;
+            color: white;
+            border-color: #C3272B;
+        }
+
+        .action-btn.danger {
+            background: #8B6B5C;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #C3272B;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .btn-gold {
+            background: #D4B15B;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .drawing-tools {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #E2D8CC;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .brush-size-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #FFF9F0;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+
+        .modal-3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 10, 5, 0.95);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            width: 92%;
+            height: 92%;
+            background: transparent;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 24px;
+            top: 24px;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 9999;
+            background: rgba(195, 39, 43, 0.95);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            color: white;
+            border: 2px solid #D4B15B;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-modal:hover {
+            background: #D4B15B;
+            transform: scale(1.15) rotate(90deg);
+            color: #5a3e2b;
+        }
+
+        #threeCanvasContainer {
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            background: #1a0e07;
+        }
+
+        .three-controls-ui {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, rgba(30, 15, 10, 0.98), rgba(60, 25, 15, 0.95));
+            backdrop-filter: blur(20px);
+            padding: 20px 18px;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            z-index: 1200;
+            width: 280px;
+            max-height: 90vh;
+            font-size: 12px;
+            color: #FFE4B5;
+            border: 1px solid rgba(212, 177, 91, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+
+        .three-controls-ui::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .three-controls-ui::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
+
+        .three-controls-ui::-webkit-scrollbar-thumb {
+            background: rgba(212, 177, 91, 0.6);
+            border-radius: 10px;
+        }
+
+        .three-controls-ui .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(212, 177, 91, 0.2);
+        }
+
+        .three-controls-ui .group-title {
+            color: #D4B15B;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .three-controls-ui .label {
+            color: #FFE4B5;
+            font-weight: 500;
+            font-size: 12px;
+            display: block;
+        }
+
+        .three-controls-ui button,
+        .three-controls-ui select {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #D4B15B;
+            color: #FFE4B5;
+            padding: 9px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .three-controls-ui button:hover {
+            background: linear-gradient(135deg, #C3272B, #8B1A1E);
+            transform: translateY(-2px);
+        }
+
+        .three-controls-ui select {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .three-controls-ui input[type="range"] {
+            width: 100%;
+            margin: 4px 0;
+        }
+
+        .three-controls-ui .btn-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .three-controls-ui .btn-row button {
+            flex: 1;
+        }
+
+        .custom-color-picker {
+            position: relative;
+            width: 100%;
+        }
+
+        .color-preview-wrapper {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .color-preview-btn {
+            flex: 1;
+            height: 40px;
+            background: #C3272B;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 12px;
+            border: 1px solid #D4B15B;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .color-preview-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .color-input-native {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid #D4B15B;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .color-popover {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: #2a1a10;
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 12px;
+            width: 100%;
+            display: none;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid #D4B15B;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+            z-index: 1300;
+            margin-bottom: 8px;
+        }
+
+        .color-popover.active {
+            display: flex;
+        }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            transition: 0.1s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+            border-color: white;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #2a1510, #4a2515);
+            color: #FFE4B5;
+            padding: 12px 24px;
+            border-radius: 30px;
+            z-index: 2000;
+            font-size: 14px;
+            border: 1px solid #D4B15B;
+            animation: toastIn 0.3s ease-out;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 24px;
+            border: 2px solid #9D2933;
+            color: #9D2933;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background-color: #9D2933;
+            color: white;
+        }
+
+        .price-tag {
+            font-size: 24px;
+            color: #FFD700;
+            font-weight: bold;
+            text-align: center;
+            margin: 5px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .price-tag small {
+            font-size: 12px;
+            color: #aaa;
+            font-weight: normal;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #5a3e2b;
+            background: rgba(0, 0, 0, 0.4);
+            color: #FFE4B5;
+            margin-top: 4px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #D4B15B;
+        }
+
+        .btn-checkout {
+            background: linear-gradient(135deg, #D4B15B, #C3272B);
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(212, 177, 91, 0.4);
+        }
+
+        .btn-checkout:disabled {
+            background: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .order-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .order-modal-box {
+            background: #2a1a10;
+            border: 2px solid #D4B15B;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            color: #FFE4B5;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .order-success-icon {
+            font-size: 60px;
+            color: #D4B15B;
+            margin-bottom: 15px;
+        }
+
+        .upload-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-modal-box {
+            background: #fff;
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 2px solid #C3272B;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .upload-success-icon {
+            font-size: 70px;
+            color: #C3272B;
+            margin-bottom: 15px;
+        }
+
+        .work-preview-img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin: 15px auto;
+            border: 2px solid #D4B15B;
+        }
+
+        .work-info {
+            text-align: left;
+            background: #FDF8F0;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .draft-panel {
+            width: 280px;
+            background: rgba(255, 250, 240, 0.98);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(212, 177, 91, 0.3);
+            z-index: 900;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .draft-panel.collapsed .draft-body {
+            height: 0;
+            padding: 0;
+            opacity: 0;
+        }
+
+        .draft-header {
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #C3272B, #D4B15B);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .draft-toggle {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .draft-panel.collapsed .draft-toggle {
+            transform: rotate(180deg);
+        }
+
+        .draft-body {
+            padding: 15px;
+            height: auto;
+            opacity: 1;
+            transition: all 0.3s ease;
+        }
+
+        .draft-save-btn {
+            width: 100%;
+            padding: 8px 12px;
+            background: #C3272B;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            transition: 0.2s;
+        }
+
+        .draft-save-btn:hover {
+            background: #9D2933;
+            transform: translateY(-2px);
+        }
+
+        .draft-list {
+            max-height: 350px;
+            overflow-y: auto;
+            gap: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .draft-list::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .draft-list::-webkit-scrollbar-thumb {
+            background: #D4B15B;
+            border-radius: 3px;
+        }
+
+        .draft-empty {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            padding: 10px 0;
+        }
+
+        .draft-item {
+            padding: 8px 10px;
+            background: #FFF9F0;
+            border: 1px solid #F0E2CF;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .draft-item:hover {
+            border-color: #C3272B;
+            background: white;
+        }
+
+        .draft-item-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            color: #5c3e1f;
+        }
+
+        .draft-item-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .draft-item-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            color: #C3272B;
+        }
+
+        .draft-item-btn.del {
+            color: #8B6B5C;
+        }
+    </style>
+</head>
+<body>
+    <div class="workshop-container">
+        <div class="header">
+            <div class="back-section"><a href="#" class="btn-back" id="dummyBackBtn"><i class="fas fa-arrow-left"></i> 返回</a></div>
+            <div class="title-section">
+                <h1><i class="fas fa-cut"></i> 文创工坊 </h1>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-primary" id="exportPngBtn">导出图片</button>
+                <button class="btn-gold" id="preview3DBtn">🏺 3D 文创预览</button>
+            </div>
+        </div>
+        <div class="main-workspace">
+            <div>
+                <div class="library-panel" id="libraryPanel">
+                    <div class="section-title">✂️ 素材库</div>
+                    <div class="upload-area" id="uploadLocalImage">
+                        <i class="fas fa-cloud-upload-alt"></i><span>点击上传本地图片</span>
+                        <input type="file" id="localImageInput" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="clip-grid" id="materialGrid">
+                        <div class="material-item"><span class="material-tag tag-heritage">非遗</span><img class="material-img" src="img/gfwy01.png" alt="纹样1" data-pattern="tuanyun"><div class="material-label">纹样01</div></div>
+                        <div class="material-item"><span class="material-tag tag-master">大师</span><img class="material-img" src="img/gfwy05.png" alt="纹样2" data-pattern="huiwen"><div class="material-label">纹样02</div></div>
+                        <div class="material-item"><span class="material-tag tag-limited">限定</span><img class="material-img" src="img/gfwy10.png" alt="纹样3" data-pattern="lianhua"><div class="material-label">纹样03</div></div>
+                        <div class="material-item"><span class="material-tag tag-heritage">非遗</span><img class="material-img" src="img/bk.png" alt="纹样4" data-pattern="fangsheng"><div class="material-label">纹样04</div></div>
+                        <div class="material-item"><span class="material-tag tag-master">大师</span><img class="material-img" src="img/wy03.png" alt="纹样5" data-pattern="ruyi"><div class="material-label">纹样05</div></div>
+                        <div class="material-item"><span class="material-tag tag-limited">限定</span><img class="material-img" src="img/wy04.png" alt="纹样6" data-pattern="panchang"><div class="material-label">纹样06</div></div>
+                        <div class="material-item"><img class="material-img" src="img/wy05.png" alt="纹样7" data-pattern="bianfu"><div class="material-label">纹样07</div></div>
+                        <div class="material-item"><img class="material-img" src="img/wy06.png" alt="纹样8" data-pattern="tongqian"><div class="material-label">纹样08</div></div>
+                        <div class="material-item"><span class="material-tag tag-heritage">非遗</span><img class="material-img" src="img/wy07.png" alt="纹样9" data-pattern="shuibo"><div class="material-label">纹样09</div></div>
+                        <div class="material-item"><span class="material-tag tag-master">大师</span><img class="material-img" src="img/wy01.png" alt="纹样10" data-pattern="shou"><div class="material-label">纹样10</div></div>
+                        <div class="material-item"><img class="material-img" src="img/wenyang01.png" alt="纹样11" data-pattern="fengwei"><div class="material-label">纹样11</div></div>
+                        <div class="material-item"><span class="material-tag tag-limited">限定</span><img class="material-img" src="img/wy01.png" alt="纹样12" data-pattern="long"><div class="material-label">纹样12</div></div>
+                    </div>
+                </div>
+                <div id="draftPanel" class="draft-panel collapsed">
+                    <div class="draft-header" id="draftHeader">
+                        <i class="fas fa-save"></i> 草稿箱
+                        <button id="toggleDraftBtn" class="draft-toggle"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                    <div class="draft-body" id="draftBody">
+                        <button id="saveDraftBtn" class="draft-save-btn">
+                            <i class="fas fa-box"></i> 保存当前草稿
+                        </button>
+                        <div class="draft-list" id="draftList">
+                            <div class="draft-empty">暂无草稿记录</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="canvas-area">
+                <div class="canvas-wrapper"><canvas id="papercutCanvas" width="600" height="600"></canvas></div>
+                <div class="toolbar-row">
+                    <button class="action-btn" onclick="deleteSelected()"><i class="fas fa-trash-alt"></i> 删除选中</button>
+                    <button class="action-btn" onclick="clearCanvas()"><i class="fas fa-broom"></i> 清空画布</button>
+                    <button class="action-btn" id="undoBtn"><i class="fas fa-undo-alt"></i> 撤销</button>
+                </div>
+                <div class="drawing-tools">
+                    <button class="action-btn" id="drawModeBtn"><i class="fas fa-pencil-alt"></i> 画笔模式</button>
+                    <div class="brush-size-control"><span><i class="fas fa-circle"></i> 粗细</span><input type="range" id="brushWidth" min="1" max="20" step="1" value="3"><span id="brushWidthVal">3</span></div>
+                    <button class="action-btn" id="undoDrawingBtn"><i class="fas fa-undo"></i> 撤销手绘</button>
+                    <button class="action-btn danger" id="clearDrawingBtn"><i class="fas fa-eraser"></i> 清除手绘</button>
+                    <button class="action-btn" id="exitDrawModeBtn" style="display:none;"><i class="fas fa-check"></i> 完成绘制</button>
+                </div>
+            </div>
+            <div class="right-panels">
+                <div class="property-panel">
+                    <div class="section-title"><i class="fas fa-sliders-h"></i> 属性调节</div>
+                    <div id="controls">
+                        <div class="prop-group"><label class="prop-label">🖼️ 画布形状</label><select id="canvasShapeSelect"><option value="square">正方形</option><option value="portrait">竖版</option><option value="landscape">横版</option><option value="circle">圆形</option></select></div>
+                        <div class="prop-group"><label class="prop-label">📏 画布尺寸</label><select id="canvasSizeSelect"><option value="600">小 (600px)</option><option value="800" selected>中 (800px)</option><option value="1000">大 (1000px)</option></select></div>
+                        <div class="prop-group"><label class="prop-label">🎨 画笔颜色</label><input type="color" id="brushColorPicker" value="#C3272B"></div>
+                        <div class="prop-group"><label class="prop-label">🖼️ 选中纹样颜色</label><input type="color" id="patternColorPicker" value="#C3272B"></div>
+                        <div class="prop-group"><label class="prop-label">📐 缩放 <span id="scaleValue">1.0</span></label><input type="range" id="scaleSlider" min="0.1" max="3" step="0.1" value="1"></div>
+                        <div class="prop-group"><label class="prop-label">🔄 旋转 <span id="angleValue">0°</span></label><input type="range" id="angleSlider" min="0" max="360" value="0"></div>
+                    </div>
+                    <div style="margin-top: 15px; font-size:12px; color:#b58a6b; text-align:center;">💡 点击图片添加纹样 | 画笔模式可自由绘制</div>
+                </div>
+                <div class="property-panel">
+                    <div class="section-title"><i class="fas fa-store"></i> 作品上架</div>
+                    <div class="prop-group">
+                        <label class="prop-label">作品名称</label>
+                        <input type="text" id="workName" class="platform-input" placeholder="如：吉祥如意">
+                    </div>
+                    <div class="prop-group">
+                        <label class="prop-label">作品分类</label>
+                        <select id="workCategory">
+                            <option value="heritage">非遗典藏</option>
+                            <option value="festival">节日喜庆</option>
+                            <option value="decor">家居装饰</option>
+                            <option value="gift">文创礼品</option>
+                            <option value="custom">私人定制</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label class="prop-label">作品描述</label>
+                        <textarea id="workDesc" class="platform-textarea" placeholder="描述作品寓意、工艺..."></textarea>
+                    </div>
+                    <div class="prop-group">
+                        <label class="prop-label">预估售价</label>
+                        <div class="price-display" id="autoPrice">¥0</div>
+                    </div>
+                    <div class="toolbar-row">
+                        <button class="action-btn" id="previewWorkBtn"><i class="fas fa-eye"></i> 预览</button>
+                        <button class="btn-primary" id="uploadWorkBtn"><i class="fas fa-upload"></i> 上传</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal3d" class="modal-3d">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModalBtn">&times;</span>
+            <div id="threeCanvasContainer"></div>
+        </div>
+    </div>
+
+    <div id="orderModalOverlay" class="order-modal-overlay">
+        <div class="order-modal-box">
+            <div class="order-success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2 style="margin-bottom: 10px; color: #D4B15B;">订单提交成功！</h2>
+            <p style="margin-bottom: 20px; color: #ccc;">您的定制作品已进入生产流程</p>
+            <div id="orderDetails" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: left; font-size: 13px; line-height: 1.6;"></div>
+            <button onclick="closeOrderModal()" class="btn-primary" style="margin-top: 20px; width: 100%;">好的，知道了</button>
+        </div>
+    </div>
+
+    <div id="uploadModalOverlay" class="upload-modal-overlay">
+        <div class="upload-modal-box">
+            <div class="upload-success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2 style="color: #C3272B; margin-bottom: 10px;">作品上传成功！</h2>
+            <p style="color: #5a3e2b; margin-bottom: 15px;">您的作品已上架平台，等待制作发货</p>
+            <img id="workPreviewImg" class="work-preview-img" alt="作品预览">
+            <div class="work-info" id="uploadWorkInfo"></div>
+            <button onclick="closeUploadModal()" class="btn-primary" style="margin-top: 20px;">完成</button>
+        </div>
+    </div>
+
+    <!-- 纹样图片自动生成脚本 -->
+    <script>
+        (function() {
+            // 为所有纹样图片生成独特的中国传统纹样SVG图案
+            function generatePatternSVG(patternType, size) {
+                size = size || 200;
+                const half = size / 2;
+                let svgContent = '';
+                const bgColor = '#f4e9db';
+
+                // 基础SVG容器
+                const svgStart = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+                const svgEnd = `</svg>`;
+
+                switch (patternType) {
+                    case 'tuanyun':
+                        // 团花云纹 - 红色多层圆形花瓣
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <circle cx="0" cy="0" r="${half*0.78}" fill="none" stroke="#C3272B" stroke-width="3"/>
+                      <circle cx="0" cy="0" r="${half*0.55}" fill="none" stroke="#D4B15B" stroke-width="2"/>
+                      ${Array.from({length:8}, (_,i) => {
+                        const angle = (i/8)*Math.PI*2;
+                        const x1 = Math.cos(angle)*half*0.32;
+                        const y1 = Math.sin(angle)*half*0.32;
+                        const x2 = Math.cos(angle)*half*0.7;
+                        const y2 = Math.sin(angle)*half*0.7;
+                        return `<ellipse cx="${(x1+x2)/2}" cy="${(y1+y2)/2}" rx="${half*0.18}" ry="${half*0.28}" fill="#C3272B" opacity="0.7" transform="rotate(${(i/8)*360},${(x1+x2)/2},${(y1+y2)/2})"/>`;
+                      }).join('')}
+                      <circle cx="0" cy="0" r="${half*0.18}" fill="#D4B15B"/>
+                      <circle cx="0" cy="0" r="${half*0.08}" fill="#C3272B"/>
+                      ${Array.from({length:12}, (_,i) => {
+                        const a = (i/12)*Math.PI*2;
+                        return `<circle cx="${Math.cos(a)*half*0.62}" cy="${Math.sin(a)*half*0.62}" r="6" fill="#D4B15B" opacity="0.8"/>`;
+                      }).join('')}
+                    </g>`;
+                        break;
+                    case 'huiwen':
+                        // 回纹 - 金色连续回形几何纹
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <rect x="${-half*0.72}" y="${-half*0.72}" width="${size*0.72}" height="${size*0.72}" fill="none" stroke="#D4B15B" stroke-width="3"/>
+                      ${Array.from({length:4}, (_,q) => {
+                        const ox = [1,1,-1,-1][q];
+                        const oy = [1,-1,-1,1][q];
+                        let paths = '';
+                        for(let i=0;i<3;i++){
+                          const base = half*0.6 - i*half*0.16;
+                          const inner = base - half*0.1;
+                          paths += `<path d="M${ox*base},${oy*base} L${ox*base},${oy*inner} L${ox*inner},${oy*inner} L${ox*inner},${oy*base}" fill="none" stroke="#D4B15B" stroke-width="2" opacity="${1-i*0.25}"/>`;
+                        }
+                        return paths;
+                      }).join('')}
+                      <circle cx="0" cy="0" r="${half*0.15}" fill="#C3272B" opacity="0.6"/>
+                      <circle cx="0" cy="0" r="${half*0.06}" fill="#D4B15B"/>
+                    </g>`;
+                        break;
+                    case 'lianhua':
+                        // 莲花纹 - 红色八瓣莲花
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      ${Array.from({length:8}, (_,i) => {
+                        const angle = (i/8)*Math.PI*2 - Math.PI/2;
+                        const cx = Math.cos(angle)*half*0.22;
+                        const cy = Math.sin(angle)*half*0.22;
+                        return `<ellipse cx="${cx}" cy="${cy}" rx="${half*0.38}" ry="${half*0.16}" fill="#C3272B" opacity="0.75" transform="rotate(${angle*(180/Math.PI)+90},${cx},${cy})"/>`;
+                      }).join('')}
+                      ${Array.from({length:8}, (_,i) => {
+                        const angle = (i/8)*Math.PI*2 - Math.PI/2 + Math.PI/8;
+                        const cx2 = Math.cos(angle)*half*0.44;
+                        const cy2 = Math.sin(angle)*half*0.44;
+                        return `<ellipse cx="${cx2}" cy="${cy2}" rx="${half*0.22}" ry="${half*0.09}" fill="#2F5D3A" opacity="0.5" transform="rotate(${angle*(180/Math.PI)+90},${cx2},${cy2})"/>`;
+                      }).join('')}
+                      <circle cx="0" cy="0" r="${half*0.2}" fill="#D4B15B"/>
+                      <circle cx="0" cy="0" r="${half*0.08}" fill="#C3272B"/>
+                    </g>`;
+                        break;
+                    case 'fangsheng':
+                        // 方胜纹 - 金色菱形交错
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <rect x="${-half*0.6}" y="${-half*0.6}" width="${size*0.6}" height="${size*0.6}" fill="none" stroke="#D4B15B" stroke-width="2.5" transform="rotate(45)"/>
+                      <rect x="${-half*0.42}" y="${-half*0.42}" width="${size*0.42}" height="${size*0.42}" fill="none" stroke="#C3272B" stroke-width="2" transform="rotate(45)"/>
+                      <rect x="${-half*0.24}" y="${-half*0.24}" width="${size*0.24}" height="${size*0.24}" fill="#D4B15B" opacity="0.5" transform="rotate(45)"/>
+                      <circle cx="0" cy="0" r="${half*0.06}" fill="#C3272B"/>
+                      ${Array.from({length:4}, (_,i) => {
+                        const a = (i/4)*Math.PI*2 + Math.PI/4;
+                        return `<circle cx="${Math.cos(a)*half*0.5}" cy="${Math.sin(a)*half*0.5}" r="5" fill="#D4B15B"/>`;
+                      }).join('')}
+                    </g>`;
+                        break;
+                    case 'ruyi':
+                        // 如意云纹 - 红色如意云头
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <path d="M${-half*0.55},${half*0.15} C${-half*0.55},${-half*0.2} ${-half*0.2},${-half*0.55} ${half*0.05},${-half*0.4} C${half*0.3},${-half*0.25} ${half*0.5},${half*0.0} ${half*0.45},${half*0.3} C${half*0.4},${half*0.55} ${half*0.05},${half*0.6} ${-half*0.15},${half*0.45}" fill="#C3272B" opacity="0.7"/>
+                      <path d="M${-half*0.35},${half*0.05} C${-half*0.35},${-half*0.1} ${-half*0.1},${-half*0.3} ${half*0.05},${-half*0.2} C${half*0.18},${-half*0.1} ${half*0.28},${half*0.05} ${half*0.22},${half*0.2}" fill="#D4B15B" opacity="0.6"/>
+                      <circle cx="${-half*0.35}" cy="${half*0.25}" r="${half*0.12}" fill="#C3272B" opacity="0.5"/>
+                    </g>`;
+                        break;
+                    case 'panchang':
+                        // 盘长纹 - 金色盘长结
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      ${Array.from({length:4}, (_,i) => {
+                        const a = (i/4)*Math.PI*2;
+                        const x = Math.cos(a)*half*0.3;
+                        const y = Math.sin(a)*half*0.3;
+                        return `<path d="M${x},${y} C${x+half*0.15},${y-half*0.3} ${x-half*0.15},${y+half*0.3} ${x},${y}" fill="none" stroke="#D4B15B" stroke-width="3" opacity="0.8"/>`;
+                      }).join('')}
+                      <circle cx="0" cy="0" r="${half*0.5}" fill="none" stroke="#C3272B" stroke-width="2" stroke-dasharray="8,4"/>
+                      <circle cx="0" cy="0" r="${half*0.2}" fill="#D4B15B" opacity="0.5"/>
+                      <circle cx="0" cy="0" r="${half*0.06}" fill="#C3272B"/>
+                    </g>`;
+                        break;
+                    case 'bianfu':
+                        // 蝙蝠纹 - 红色蝙蝠（福）
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half+half*0.1})">
+                      <ellipse cx="0" cy="${-half*0.1}" rx="${half*0.6}" ry="${half*0.35}" fill="#C3272B" opacity="0.7"/>
+                      <ellipse cx="${-half*0.45}" cy="${-half*0.3}" rx="${half*0.28}" ry="${half*0.18}" fill="#C3272B" opacity="0.7" transform="rotate(-30,${-half*0.45},${-half*0.3})"/>
+                      <ellipse cx="${half*0.45}" cy="${-half*0.3}" rx="${half*0.28}" ry="${half*0.18}" fill="#C3272B" opacity="0.7" transform="rotate(30,${half*0.45},${-half*0.3})"/>
+                      <circle cx="0" cy="${-half*0.15}" r="${half*0.12}" fill="#D4B15B"/>
+                      <circle cx="${-half*0.3}" cy="${half*0.05}" r="${half*0.06}" fill="#D4B15B" opacity="0.6"/>
+                      <circle cx="${half*0.3}" cy="${half*0.05}" r="${half*0.06}" fill="#D4B15B" opacity="0.6"/>
+                    </g>`;
+                        break;
+                    case 'tongqian':
+                        // 铜钱纹 - 金色圆形方孔
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <circle cx="0" cy="0" r="${half*0.7}" fill="#D4B15B" opacity="0.7"/>
+                      <circle cx="0" cy="0" r="${half*0.58}" fill="${bgColor}"/>
+                      <rect x="${-half*0.25}" y="${-half*0.25}" width="${half*0.5}" height="${half*0.5}" fill="#D4B15B" opacity="0.7"/>
+                      <rect x="${-half*0.2}" y="${-half*0.2}" width="${half*0.4}" height="${half*0.4}" fill="${bgColor}"/>
+                      ${Array.from({length:4}, (_,i) => {
+                        const a = (i/4)*Math.PI*2 + Math.PI/4;
+                        const r = half*0.64;
+                        return `<circle cx="${Math.cos(a)*r}" cy="${Math.sin(a)*r}" r="4" fill="#C3272B"/>`;
+                      }).join('')}
+                    </g>`;
+                        break;
+                    case 'shuibo':
+                        // 水波纹 - 红色波浪纹
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g>
+                      ${Array.from({length:6}, (_,i) => {
+                        const y = half*0.25 + i*half*0.22;
+                        const amp = half*0.25 - i*2;
+                        const color = i%2===0 ? '#C3272B' : '#D4B15B';
+                        return `<path d="M${half*0.1},${y} Q${half*0.3},${y-amp} ${half*0.5},${y} Q${half*0.7},${y+amp} ${half*0.9},${y}" fill="none" stroke="${color}" stroke-width="3" opacity="${1-i*0.12}"/>`;
+                      }).join('')}
+                      <circle cx="${half}" cy="${half}" r="${half*0.15}" fill="#C3272B" opacity="0.4"/>
+                      <circle cx="${half}" cy="${half}" r="${half*0.05}" fill="#D4B15B"/>
+                    </g>`;
+                        break;
+                    case 'shou':
+                        // 寿字纹简化 - 金色
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <rect x="${-half*0.5}" y="${-half*0.6}" width="${size*0.5}" height="${size*0.6}" fill="none" stroke="#D4B15B" stroke-width="3"/>
+                      <line x1="${-half*0.3}" y1="${-half*0.6}" x2="${-half*0.3}" y2="${half*0.0}" stroke="#D4B15B" stroke-width="2"/>
+                      <line x1="${half*0.0}" y1="${-half*0.6}" x2="${half*0.0}" y2="${half*0.0}" stroke="#D4B15B" stroke-width="2"/>
+                      <rect x="${-half*0.45}" y="${half*0.05}" width="${half*0.9}" height="${half*0.35}" fill="none" stroke="#C3272B" stroke-width="2.5"/>
+                      <line x1="${-half*0.45}" y1="${half*0.2}" x2="${half*0.45}" y2="${half*0.2}" stroke="#C3272B" stroke-width="1.5"/>
+                      <circle cx="0" cy="${-half*0.15}" r="${half*0.1}" fill="#D4B15B" opacity="0.5"/>
+                    </g>`;
+                        break;
+                    case 'fengwei':
+                        // 凤尾纹 - 红色弧形羽毛
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half*0.3})">
+                      ${Array.from({length:7}, (_,i) => {
+                        const a = -Math.PI/2 + (i-3)*Math.PI/14;
+                        const len = half*0.7 - Math.abs(i-3)*half*0.1;
+                        const ex = Math.cos(a)*len;
+                        const ey = Math.sin(a)*len;
+                        const color = i%2===0 ? '#C3272B' : '#D4B15B';
+                        return `<path d="M0,0 Q${ex*0.5},${ey*0.5} ${ex},${ey}" fill="none" stroke="${color}" stroke-width="${4-Math.abs(i-3)*0.4}" opacity="${1-Math.abs(i-3)*0.08}"/>`;
+                      }).join('')}
+                      <circle cx="0" cy="${-half*0.05}" r="${half*0.12}" fill="#C3272B" opacity="0.6"/>
+                      <circle cx="0" cy="${-half*0.05}" r="${half*0.04}" fill="#D4B15B"/>
+                      ${Array.from({length:5}, (_,i) => {
+                        const a2 = -Math.PI/2 + (i-2)*Math.PI/20;
+                        const r2 = half*0.55;
+                        return `<circle cx="${Math.cos(a2)*r2}" cy="${Math.sin(a2)*r2}" r="3" fill="#2F5D3A" opacity="0.6"/>`;
+                      }).join('')}
+                    </g>`;
+                        break;
+                    case 'long':
+                        // 龙纹简化 - 金色盘旋
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <path d="M${-half*0.55},${half*0.2} C${-half*0.3},${-half*0.4} ${half*0.1},${-half*0.5} ${half*0.4},${-half*0.15} C${half*0.55},${half*0.0} ${half*0.35},${half*0.35} ${half*0.0},${half*0.45}" fill="none" stroke="#D4B15B" stroke-width="4" stroke-linecap="round"/>
+                      <circle cx="${-half*0.55}" cy="${half*0.2}" r="${half*0.14}" fill="#C3272B" opacity="0.7"/>
+                      <circle cx="${-half*0.55}" cy="${half*0.2}" r="${half*0.05}" fill="#D4B15B"/>
+                      <circle cx="${half*0.0}" cy="${half*0.45}" r="${half*0.1}" fill="#D4B15B" opacity="0.5"/>
+                      ${Array.from({length:8}, (_,i) => {
+                        const t = i/7;
+                        const px = -half*0.55 + t*(half*0.55);
+                        const py = half*0.2 + t*(-half*0.35) + Math.sin(t*Math.PI)*half*0.15;
+                        return `<circle cx="${px}" cy="${py}" r="3" fill="#C3272B" opacity="${0.4+t*0.4}"/>`;
+                      }).join('')}
+                    </g>`;
+                        break;
+                    default:
+                        svgContent = `
+                    <rect width="${size}" height="${size}" fill="${bgColor}" rx="8"/>
+                    <g transform="translate(${half},${half})">
+                      <circle cx="0" cy="0" r="${half*0.5}" fill="none" stroke="#C3272B" stroke-width="3"/>
+                      <circle cx="0" cy="0" r="${half*0.2}" fill="#D4B15B" opacity="0.6"/>
+                    </g>`;
+                }
+
+                return svgStart + svgContent + svgEnd;
+            }
+
+            // 将SVG转换为Data URI
+            function svgToDataURI(svgString) {
+                return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+            }
+
+            // 初始化所有纹样图片
+            function initPatternImages() {
+                const materialImgs = document.querySelectorAll('.material-img');
+                materialImgs.forEach(img => {
+                    const patternType = img.getAttribute('data-pattern');
+                    if (patternType) {
+                        const svg = generatePatternSVG(patternType, 200);
+                        img.src = svgToDataURI(svg);
+                        // 移除data-pattern属性，避免重复处理
+                        img.removeAttribute('data-pattern');
+                    }
+                });
+            }
+
+            // 页面加载完成后初始化
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initPatternImages);
+            } else {
+                initPatternImages();
+            }
+
+            // 也为后续动态添加的material-img提供支持（用于本地图片上传后的处理）
+            // 本地图片上传不受影响，因为它们使用FileReader读取
+        })();
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import {
+            OrbitControls
+        } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+
+        const canvasEl = new fabric.Canvas('papercutCanvas', {
+            backgroundColor: '#FEF0DF',
+            preserveObjectStacking: true,
+            isDrawingMode: false
+        });
+        window.canvas = canvasEl;
+        window.deleteSelected = () => {
+            let o = canvasEl.getActiveObject();
+            if (o) {
+                canvasEl.remove(o);
+                canvasEl.discardActiveObject();
+                canvasEl.renderAll();
+                sync3DIfOpen();
+            }
+        };
+        window.clearCanvas = () => {
+            if (canvasEl.isDrawingMode) exitDrawMode();
+            canvasEl.clear();
+            canvasEl.setBackgroundColor('#FEF0DF', canvasEl.renderAll.bind(canvasEl));
+            showToast('画布已清空', '🧹');
+            sync3DIfOpen();
+        };
+
+        let modalIsOpen = false;
+        let syncTimeout = null;
+        let animationFrameId = null;
+        let textureOffsetX = 0,
+            textureOffsetY = 0;
+        let currentModelType = 'disc';
+        let currentMaterialType = 'paper';
+
+        function sync3DIfOpen() {
+            if (!modalIsOpen) return;
+            if (syncTimeout) clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(() => {
+                syncCanvasTo3D();
+            }, 80);
+        }
+
+        function addImageToCanvas(imgUrl, name) {
+            if (canvasEl.isDrawingMode) exitDrawMode();
+            fabric.Image.fromURL(imgUrl, (img) => {
+                img.scaleToWidth(120);
+                img.set({
+                    left: canvasEl.width / 2,
+                    top: canvasEl.height / 2,
+                    originX: 'center',
+                    originY: 'center'
+                });
+                canvasEl.add(img);
+                canvasEl.setActiveObject(img);
+                canvasEl.renderAll();
+                showToast(`添加「${name}」`, '✂️');
+                sync3DIfOpen();
+            });
+        }
+        document.querySelectorAll('.material-item').forEach(item => {
+            item.addEventListener('click', () => {
+                let src = item.querySelector('.material-img').src;
+                let name = item.querySelector('.material-label').innerText;
+                addImageToCanvas(src, name);
+            });
+        });
+        document.getElementById('uploadLocalImage').addEventListener('click', () => document.getElementById(
+            'localImageInput').click());
+        document.getElementById('localImageInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                let reader = new FileReader();
+                reader.onload = ev => {
+                    let url = ev.target.result;
+                    let newDiv = document.createElement('div');
+                    newDiv.className = 'material-item';
+                    let img = document.createElement('img');
+                    img.className = 'material-img';
+                    img.src = url;
+                    let lab = document.createElement('div');
+                    lab.className = 'material-label';
+                    lab.innerText = '本地纹样';
+                    newDiv.appendChild(img);
+                    newDiv.appendChild(lab);
+                    document.getElementById('materialGrid').appendChild(newDiv);
+                    newDiv.addEventListener('click', () => {
+                        addImageToCanvas(url, '本地纹样');
+                    });
+                    showToast('已添加至素材库', '📁');
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        const shapeSelect = document.getElementById('canvasShapeSelect'),
+            sizeSelect = document.getElementById('canvasSizeSelect');
+
+        function resizeCanvas() {
+            let shape = shapeSelect.value,
+                size = parseInt(sizeSelect.value);
+            let w = size,
+                h = size;
+            if (shape === 'portrait') {
+                w = Math.floor(size * 0.666);
+                h = size;
+            } else if (shape === 'landscape') {
+                w = size;
+                h = Math.floor(size * 0.666);
+            }
+            let json = canvasEl.toJSON();
+            canvasEl.setWidth(w);
+            canvasEl.setHeight(h);
+            canvasEl.loadFromJSON(json, () => {
+                canvasEl.renderAll();
+                sync3DIfOpen();
+            });
+        }
+        shapeSelect.addEventListener('change', resizeCanvas);
+        sizeSelect.addEventListener('change', resizeCanvas);
+        setTimeout(() => {
+            sizeSelect.value = '800';
+            resizeCanvas();
+        }, 100);
+
+        const scaleSlider = document.getElementById('scaleSlider'),
+            angleSlider = document.getElementById('angleSlider');
+
+        function updateSliderFromSelected() {
+            const activeObj = canvasEl.getActiveObject();
+            if (activeObj) {
+                const scale = parseFloat(activeObj.scaleX.toFixed(1));
+                scaleSlider.value = scale;
+                document.getElementById('scaleValue').innerText = scale;
+                const angle = Math.round(activeObj.angle);
+                angleSlider.value = angle;
+                document.getElementById('angleValue').innerText = angle + '°';
+            } else {
+                scaleSlider.value = 1;
+                document.getElementById('scaleValue').innerText = '1.0';
+                angleSlider.value = 0;
+                document.getElementById('angleValue').innerText = '0°';
+            }
+        }
+        canvasEl.on('selection:created', updateSliderFromSelected);
+        canvasEl.on('selection:updated', updateSliderFromSelected);
+        canvasEl.on('selection:cleared', updateSliderFromSelected);
+
+        scaleSlider.oninput = () => {
+            let a = canvasEl.getActiveObject();
+            if (a) {
+                const val = parseFloat(scaleSlider.value);
+                a.scale(val);
+                canvasEl.renderAll();
+                document.getElementById('scaleValue').innerText = val;
+                sync3DIfOpen();
+            }
+        };
+        angleSlider.oninput = () => {
+            let a = canvasEl.getActiveObject();
+            if (a) {
+                const val = parseInt(angleSlider.value);
+                a.rotate(val);
+                canvasEl.renderAll();
+                document.getElementById('angleValue').innerText = val + '°';
+                sync3DIfOpen();
+            }
+        };
+
+        document.getElementById('exportPngBtn').onclick = () => {
+            if (canvasEl.isDrawingMode) exitDrawMode();
+            let link = document.createElement('a');
+            link.download = '作品.png';
+            link.href = canvasEl.toDataURL({
+                format: 'png',
+                multiplier: 2
+            });
+            link.click();
+        };
+        document.getElementById('undoBtn').addEventListener('click', () => {
+            let objs = canvasEl.getObjects();
+            if (objs.length) {
+                canvasEl.remove(objs[objs.length - 1]);
+                canvasEl.renderAll();
+                showToast('撤销', '↩️');
+                sync3DIfOpen();
+            }
+        });
+
+        let isDrawingModeActive = false;
+        const drawBtn = document.getElementById('drawModeBtn'),
+            exitDrawBtn = document.getElementById('exitDrawModeBtn'),
+            brushWidth = document.getElementById('brushWidth'),
+            brushVal = document.getElementById('brushWidthVal'),
+            brushColorPicker = document.getElementById('brushColorPicker'),
+            patternColorPicker = document.getElementById('patternColorPicker');
+
+        function enterDrawMode() {
+            if (canvasEl.isDrawingMode) return;
+            canvasEl.isDrawingMode = true;
+            drawBtn.classList.add('active');
+            exitDrawBtn.style.display = 'inline-flex';
+            canvasEl.freeDrawingBrush = new fabric.PencilBrush(canvasEl);
+            canvasEl.freeDrawingBrush.color = brushColorPicker.value;
+            canvasEl.freeDrawingBrush.width = parseInt(brushWidth.value);
+            canvasEl.on('path:created', (e) => {
+                e.path.handDrawn = true;
+                canvasEl.renderAll();
+                sync3DIfOpen();
+            });
+            showToast('画笔模式已开启', '✏️');
+        }
+
+        function exitDrawMode() {
+            if (!canvasEl.isDrawingMode) return;
+            canvasEl.isDrawingMode = false;
+            drawBtn.classList.remove('active');
+            exitDrawBtn.style.display = 'none';
+            canvasEl.off('path:created');
+            showToast('画笔模式关闭', '✅');
+        }
+        drawBtn.addEventListener('click', enterDrawMode);
+        exitDrawBtn.addEventListener('click', exitDrawMode);
+        brushWidth.addEventListener('input', (e) => {
+            brushVal.innerText = e.target.value;
+            if (canvasEl.isDrawingMode) canvasEl.freeDrawingBrush.width = parseInt(e.target.value);
+        });
+
+        brushColorPicker.addEventListener('input', (e) => {
+            if (canvasEl.isDrawingMode) canvasEl.freeDrawingBrush.color = e.target.value;
+        });
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function applyColorToSelectedPattern(color) {
+            const activeObj = canvasEl.getActiveObject();
+            if (!activeObj || !activeObj.isType('image')) {
+                return;
+            }
+            const rgb = hexToRgb(color);
+            if (!rgb) return;
+            const r = rgb.r / 255;
+            const g = rgb.g / 255;
+            const b = rgb.b / 255;
+            const matrix = [
+                0.3, 0.59, 0.11, 0, r,
+                0.3, 0.59, 0.11, 0, g,
+                0.3, 0.59, 0.11, 0, b,
+                0, 0, 0, 1, 0
+            ];
+            if (!fabric.Image || !fabric.Image.filters) return;
+            const filter = new fabric.Image.filters.ColorMatrix({
+                matrix: matrix
+            });
+            activeObj.filters = [filter];
+            activeObj.applyFilters();
+            canvasEl.renderAll();
+            sync3DIfOpen();
+        }
+
+        patternColorPicker.addEventListener('input', (e) => {
+            applyColorToSelectedPattern(e.target.value);
+        });
+
+        document.getElementById('undoDrawingBtn').addEventListener('click', () => {
+            let objs = canvasEl.getObjects();
+            for (let i = objs.length - 1; i >= 0; i--) {
+                if (objs[i].handDrawn) {
+                    canvasEl.remove(objs[i]);
+                    canvasEl.renderAll();
+                    showToast('撤销手绘', '✏️');
+                    sync3DIfOpen();
+                    return;
+                }
+            }
+        });
+        document.getElementById('clearDrawingBtn').addEventListener('click', () => {
+            let toRemove = canvasEl.getObjects().filter(obj => obj.handDrawn);
+            toRemove.forEach(obj => canvasEl.remove(obj));
+            canvasEl.renderAll();
+            showToast(`清除${toRemove.length}条手绘`, '🧹');
+            sync3DIfOpen();
+        });
+
+        function showToast(msg, icon = "🧧") {
+            let d = document.createElement('div');
+            d.className = 'toast-msg';
+            d.innerText = `${icon} ${msg}`;
+            document.body.appendChild(d);
+            setTimeout(() => d.remove(), 2500);
+        }
+
+        const materialPresets = {
+            paper: {
+                name: '宣纸',
+                metalness: 0.0,
+                roughness: 0.6,
+                color: 0xfef0df,
+                priceFactor: 1.0
+            },
+            jade: {
+                name: '玉石',
+                metalness: 0.1,
+                roughness: 0.2,
+                color: 0x8fbc8f,
+                priceFactor: 3.5
+            },
+            bronze: {
+                name: '青铜',
+                metalness: 0.8,
+                roughness: 0.4,
+                color: 0xcd7f32,
+                priceFactor: 4.0
+            },
+            gold: {
+                name: '鎏金',
+                metalness: 0.9,
+                roughness: 0.2,
+                color: 0xffd700,
+                priceFactor: 5.0
+            },
+            silk: {
+                name: '丝绸',
+                metalness: 0.0,
+                roughness: 0.1,
+                color: 0xffb6c1,
+                priceFactor: 2.5
+            },
+            lacquer: {
+                name: '漆器',
+                metalness: 0.05,
+                roughness: 0.3,
+                color: 0x8b3a3a,
+                priceFactor: 3.0
+            },
+            rosewood: {
+                name: '紫檀',
+                metalness: 0.1,
+                roughness: 0.5,
+                color: 0x5e2e1c,
+                priceFactor: 4.5
+            },
+            celadon: {
+                name: '青瓷',
+                metalness: 0.0,
+                roughness: 0.2,
+                color: 0x98b296,
+                priceFactor: 3.8
+            }
+        };
+        const modelBasePrices = {
+            disc: {
+                name: '圆盘/铜镜',
+                base: 99
+            },
+            square: {
+                name: '方形画框',
+                base: 129
+            },
+            ding: {
+                name: '方鼎',
+                base: 599
+            },
+            fan: {
+                name: '团扇',
+                base: 169
+            },
+            vase: {
+                name: '花瓶',
+                base: 399
+            },
+            gourd: {
+                name: '葫芦',
+                base: 299
+            },
+            lantern: {
+                name: '灯笼',
+                base: 199
+            },
+            cong: {
+                name: '玉琮',
+                base: 499
+            },
+            ruyi: {
+                name: '如意',
+                base: 399
+            },
+            foldingFan: {
+                name: '折扇',
+                base: 159
+            },
+            brushPot: {
+                name: '笔筒',
+                base: 259
+            }
+        };
+        const bgPresets = {
+            festive: {
+                name: '喜庆红金渐变',
+                type: 'gradient'
+            },
+            red: {
+                name: '朱红纯色',
+                type: 'color',
+                value: 0x5C0A0C
+            },
+            gold: {
+                name: '鎏金纯色',
+                type: 'color',
+                value: 0xD4B15B
+            },
+            black: {
+                name: '深夜黑',
+                type: 'color',
+                value: 0x0A0A0A
+            },
+            starry: {
+                name: '星空',
+                type: 'color',
+                value: 0x0F172A
+            },
+            ink: {
+                name: '水墨灰',
+                type: 'color',
+                value: 0x2A2A2A
+            },
+            brown: {
+                name: '檀木棕',
+                type: 'color',
+                value: 0x3E2723
+            }
+        };
+
+        function createRedGoldGradientTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#C3272B');
+            gradient.addColorStop(0.5, '#D4B15B');
+            gradient.addColorStop(1, '#8B1A1E');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function applyMaterialPreset(presetKey, customColorHex = null) {
+            const preset = materialPresets[presetKey];
+            if (!preset || !threeMesh) return;
+            let finalColor = customColorHex ? new THREE.Color(customColorHex) : new THREE.Color(preset.color);
+            const applyTo = (mesh) => {
+                if (mesh?.material) {
+                    mesh.material.metalness = preset.metalness;
+                    mesh.material.roughness = preset.roughness;
+                    mesh.material.color.copy(finalColor);
+                    mesh.material.needsUpdate = true;
+                }
+            };
+            if (threeMesh.userData?.isGroup && threeMesh.userData.mainMesh) applyTo(threeMesh.userData.mainMesh);
+            else applyTo(threeMesh);
+        }
+        async function applyTextureTo3D(textureUrl) {
+            if (!threeMesh || !textureUrl) return;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const size = 2048;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                const scale = Math.max(size / img.width, size / img.height);
+                const w = img.width * scale;
+                const h = img.height * scale;
+                const x = (size - w) / 2;
+                const y = (size - h) / 2;
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.clearRect(0, 0, size, size);
+                ctx.drawImage(img, x, y, w, h);
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                const target = threeMesh.userData?.isGroup ? threeMesh.userData.mainMesh : threeMesh;
+                if (target?.material) {
+                    target.material.map = texture;
+                    target.material.transparent = true;
+                    target.material.alphaTest = 0.05;
+                    target.material.side = THREE.DoubleSide;
+                    target.material.needsUpdate = true;
+                    texture.offset.set(textureOffsetX, textureOffsetY);
+                }
+            };
+            img.src = textureUrl;
+        }
+
+        function updateTextureOffset() {
+            if (!threeMesh) return;
+            const target = threeMesh.userData?.isGroup ? threeMesh.userData.mainMesh : threeMesh;
+            if (target?.material?.map) {
+                target.material.map.offset.set(textureOffsetX, textureOffsetY);
+                target.material.map.needsUpdate = true;
+            }
+        }
+        async function syncCanvasTo3D() {
+            if (!modalIsOpen) return;
+            try {
+                const texData = canvasEl.toDataURL({
+                    format: 'png',
+                    multiplier: 2
+                });
+                if (texData) await applyTextureTo3D(texData);
+            } catch (e) {}
+        }
+
+        function applyCropToTexture(shape) {
+            const originalDataURL = canvasEl.toDataURL({
+                format: 'png',
+                multiplier: 2
+            });
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                const cropCanvas = document.createElement('canvas');
+                const size = Math.min(img.width, img.height);
+                cropCanvas.width = size;
+                cropCanvas.height = size;
+                const ctx = cropCanvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.clearRect(0, 0, size, size);
+                ctx.save();
+                if (shape === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                    ctx.clip();
+                } else if (shape === 'rect') {
+                    const rectW = size * 0.8,
+                        rectH = size * 0.8;
+                    ctx.beginPath();
+                    ctx.rect((size - rectW) / 2, (size - rectH) / 2, rectW, rectH);
+                    ctx.clip();
+                }
+                ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, size, size);
+                ctx.restore();
+                applyTextureTo3D(cropCanvas.toDataURL('image/png'));
+                showToast(`${shape==='circle'?'圆形':'矩形'}裁剪`, '✂️');
+            };
+            img.src = originalDataURL;
+        }
+        let threeScene, threeCamera, threeRenderer, threeMesh, threeControls, threeGridHelper;
+        let autoRotateFlag = true,
+            currentRotateSpeed = 1.5,
+            currentBaseColor = "#F5DEB3";
+
+        function create3DModel(type, scene) {
+            if (threeMesh) {
+                scene.remove(threeMesh);
+            }
+            let group, mainMesh;
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xfef0df,
+                roughness: 0.5,
+                metalness: 0.0,
+                side: THREE.DoubleSide
+            });
+            if (type === 'disc') {
+                group = new THREE.Group();
+                const radius = 1.8;
+                const thickness = 0.2;
+                const segments = 64;
+                const topMat = mat.clone();
+                topMat.side = THREE.FrontSide;
+                const sideMat = new THREE.MeshStandardMaterial({
+                    color: 0xfef0df,
+                    roughness: 0.5,
+                    metalness: 0.0,
+                    side: THREE.DoubleSide
+                });
+                const topGeo = new THREE.CircleGeometry(radius, segments);
+                const topMesh = new THREE.Mesh(topGeo, topMat);
+                topMesh.rotation.x = -Math.PI / 2;
+                topMesh.position.y = thickness / 2;
+                group.add(topMesh);
+                mainMesh = topMesh;
+                const bottomGeo = new THREE.CircleGeometry(radius, segments);
+                const bottomMesh = new THREE.Mesh(bottomGeo, sideMat);
+                bottomMesh.rotation.x = Math.PI / 2;
+                bottomMesh.position.y = -thickness / 2;
+                group.add(bottomMesh);
+                const sideGeo = new THREE.CylinderGeometry(radius, radius, thickness, segments, 1, true);
+                const sideMesh = new THREE.Mesh(sideGeo, sideMat);
+                group.add(sideMesh);
+                threeMesh = group;
+                group.userData = {
+                    isGroup: true,
+                    mainMesh: mainMesh
+                };
+            } else {
+                if (type === 'ding') {
+                    group = new THREE.Group();
+                    const bodyGeo = new THREE.BoxGeometry(2.0, 1.2, 2.0);
+                    const uv = [];
+                    for (let i = 0; i < 6; i++) uv.push(0, 0, 1, 0, 1, 1, 0, 1);
+                    bodyGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uv.flat(), 2));
+                    bodyGeo.computeVertexNormals();
+                    const body = new THREE.Mesh(bodyGeo, mat.clone());
+                    body.position.y = 1.2;
+                    group.add(body);
+                    mainMesh = body;
+                    const rimGeo = new THREE.BoxGeometry(2.3, 0.15, 2.3);
+                    const rim = new THREE.Mesh(rimGeo, mat.clone());
+                    rim.position.y = 1.85;
+                    group.add(rim);
+                    const legGeo = new THREE.CylinderGeometry(0.22, 0.28, 1.2, 16);
+                    const legPositions = [
+                        [-0.8, 0.6, 0.8],
+                        [0.8, 0.6, 0.8],
+                        [0.8, 0.6, -0.8],
+                        [-0.8, 0.6, -0.8]
+                    ];
+                    legPositions.forEach(pos => {
+                        const leg = new THREE.Mesh(legGeo, mat.clone());
+                        leg.position.set(pos[0], pos[1], pos[2]);
+                        group.add(leg);
+                    });
+                    const earGeo = new THREE.BoxGeometry(0.5, 0.5, 0.15);
+                    const ear1 = new THREE.Mesh(earGeo, mat.clone());
+                    ear1.position.set(1.0, 2.1, 0);
+                    ear1.rotation.z = 0.1;
+                    group.add(ear1);
+                    const ear2 = ear1.clone();
+                    ear2.position.x = -1.0;
+                    ear2.rotation.z = -0.1;
+                    group.add(ear2);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: body
+                    };
+                } else if (type === 'fan') {
+                    group = new THREE.Group();
+                    const fanRadius = 1.5;
+                    const fanGeo = new THREE.CircleGeometry(fanRadius, 64);
+                    fanGeo.computeVertexNormals();
+                    const fanMat = mat.clone();
+                    fanMat.side = THREE.DoubleSide;
+                    const fanFace = new THREE.Mesh(fanGeo, fanMat);
+                    fanFace.position.set(0, 1.2, 0);
+                    group.add(fanFace);
+                    mainMesh = fanFace;
+                    const handleMat = new THREE.MeshStandardMaterial({
+                        color: 0x8B4513,
+                        roughness: 0.6,
+                        metalness: 0.1
+                    });
+                    const handleGeo = new THREE.CylinderGeometry(0.09, 0.13, 1.8, 16);
+                    const handle = new THREE.Mesh(handleGeo, handleMat);
+                    handle.position.set(0, -0.2, 0);
+                    group.add(handle);
+                    const hoopMat = new THREE.MeshStandardMaterial({
+                        color: 0xD4B15B,
+                        metalness: 0.85,
+                        roughness: 0.15
+                    });
+                    const hoop = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 16), hoopMat);
+                    hoop.position.set(0, 0.67, 0);
+                    group.add(hoop);
+                    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), hoopMat.clone());
+                    knob.position.set(0, -1.1, 0);
+                    group.add(knob);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: fanFace
+                    };
+                } else if (type === 'vase') {
+                    const points = [];
+                    points.push(new THREE.Vector2(0.1, -1.5));
+                    points.push(new THREE.Vector2(0.4, -1.4));
+                    points.push(new THREE.Vector2(0.5, -1.2));
+                    points.push(new THREE.Vector2(0.8, -0.5));
+                    points.push(new THREE.Vector2(1.0, 0.0));
+                    points.push(new THREE.Vector2(0.9, 0.5));
+                    points.push(new THREE.Vector2(0.6, 0.9));
+                    points.push(new THREE.Vector2(0.25, 1.1));
+                    points.push(new THREE.Vector2(0.25, 1.3));
+                    points.push(new THREE.Vector2(0.35, 1.35));
+                    points.push(new THREE.Vector2(0.38, 1.4));
+                    points.push(new THREE.Vector2(0.35, 1.42));
+                    const vaseGeo = new THREE.LatheGeometry(points, 64);
+                    const lengths = [0];
+                    for (let i = 1; i < points.length; i++) lengths.push(lengths[lengths.length - 1] + points[i]
+                        .distanceTo(points[i - 1]));
+                    const totalLength = lengths[lengths.length - 1];
+                    const uvAttribute = vaseGeo.getAttribute('uv');
+                    for (let i = 0; i <= 64; i++)
+                        for (let j = 0; j < points.length; j++) uvAttribute.setXY(i * points.length + j, i / 64, lengths[
+                            j] / totalLength);
+                    uvAttribute.needsUpdate = true;
+                    vaseGeo.computeVertexNormals();
+                    const vase = new THREE.Mesh(vaseGeo, mat.clone());
+                    vase.rotation.y = Math.PI;
+                    threeMesh = vase;
+                    vase.userData = {
+                        isGroup: false,
+                        mainMesh: vase
+                    };
+                } else if (type === 'square') {
+                    group = new THREE.Group();
+                    const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), mat.clone());
+                    plane.rotation.x = -Math.PI / 2;
+                    group.add(plane);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: plane
+                    };
+                } else if (type === 'gourd') {
+                    group = new THREE.Group();
+                    const sphereGeo1 = new THREE.SphereGeometry(0.8, 32, 32);
+                    const sphere1 = new THREE.Mesh(sphereGeo1, mat.clone());
+                    sphere1.position.y = 0.8;
+                    group.add(sphere1);
+                    mainMesh = sphere1;
+                    const sphereGeo2 = new THREE.SphereGeometry(0.5, 32, 32);
+                    const sphere2 = new THREE.Mesh(sphereGeo2, mat.clone());
+                    sphere2.position.y = 1.8;
+                    group.add(sphere2);
+                    const neckGeo = new THREE.CylinderGeometry(0.15, 0.2, 0.4, 16);
+                    const neck = new THREE.Mesh(neckGeo, mat.clone());
+                    neck.position.y = 2.3;
+                    group.add(neck);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: mainMesh
+                    };
+                } else if (type === 'lantern') {
+                    group = new THREE.Group();
+                    const bodyGeo = new THREE.CylinderGeometry(1.0, 1.2, 2.0, 32, 1, true);
+                    const body = new THREE.Mesh(bodyGeo, mat.clone());
+                    body.position.y = 0.5;
+                    group.add(body);
+                    mainMesh = body;
+                    const topGeo = new THREE.CircleGeometry(1.0, 32);
+                    const top = new THREE.Mesh(topGeo, mat.clone());
+                    top.rotation.x = -Math.PI / 2;
+                    top.position.y = 1.5;
+                    group.add(top);
+                    const bottomGeo = new THREE.CircleGeometry(1.2, 32);
+                    const bottom = new THREE.Mesh(bottomGeo, mat.clone());
+                    bottom.rotation.x = Math.PI / 2;
+                    bottom.position.y = -0.5;
+                    group.add(bottom);
+                    const ringMat = new THREE.MeshStandardMaterial({
+                        color: 0xD4B15B,
+                        metalness: 0.8,
+                        roughness: 0.2
+                    });
+                    const ringGeo = new THREE.TorusGeometry(1.1, 0.05, 8, 32);
+                    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+                    ring1.rotation.x = Math.PI / 2;
+                    ring1.position.y = 1.0;
+                    group.add(ring1);
+                    const ring2 = ring1.clone();
+                    ring2.position.y = 0;
+                    group.add(ring2);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: mainMesh
+                    };
+                } else if (type === 'cong') {
+                    group = new THREE.Group();
+                    const outerGeo = new THREE.BoxGeometry(1.8, 2.5, 1.8);
+                    const outer = new THREE.Mesh(outerGeo, mat.clone());
+                    outer.position.y = 1.25;
+                    group.add(outer);
+                    mainMesh = outer;
+                    const innerGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.6, 32);
+                    const innerMat = new THREE.MeshStandardMaterial({
+                        color: 0x2a1a10,
+                        roughness: 0.8
+                    });
+                    const inner = new THREE.Mesh(innerGeo, innerMat);
+                    inner.position.y = 1.25;
+                    group.add(inner);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: mainMesh
+                    };
+                } else if (type === 'ruyi') {
+                    group = new THREE.Group();
+                    const handleCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(-1.5, 0, 0), new THREE.Vector3(-
+                        0.5, 0.2, 0), new THREE.Vector3(0.5, -0.1, 0), new THREE.Vector3(1.5, 0.3, 0)
+                    ]);
+                    const handleGeo = new THREE.TubeGeometry(handleCurve, 32, 0.1, 8, false);
+                    const handle = new THREE.Mesh(handleGeo, mat.clone());
+                    group.add(handle);
+                    const headGeo = new THREE.SphereGeometry(0.4, 32, 32);
+                    headGeo.scale(1.5, 0.8, 1);
+                    const head = new THREE.Mesh(headGeo, mat.clone());
+                    head.position.set(1.5, 0.3, 0);
+                    head.rotation.z = 0.3;
+                    group.add(head);
+                    mainMesh = head;
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: mainMesh
+                    };
+                } else if (type === 'foldingFan') {
+                    group = new THREE.Group();
+                    const fanGeo = new THREE.CircleGeometry(1.5, 64, 0, Math.PI);
+                    const fanMat = mat.clone();
+                    fanMat.side = THREE.DoubleSide;
+                    const fanFace = new THREE.Mesh(fanGeo, fanMat);
+                    fanFace.rotation.z = Math.PI / 2;
+                    fanFace.position.set(0, 0.5, 0);
+                    group.add(fanFace);
+                    mainMesh = fanFace;
+                    const ribMat = new THREE.MeshStandardMaterial({
+                        color: 0x8B4513,
+                        roughness: 0.6
+                    });
+                    for (let i = 0; i < 12; i++) {
+                        const angle = (i / 11) * Math.PI - Math.PI / 2;
+                        const ribGeo = new THREE.BoxGeometry(0.02, 1.6, 0.02);
+                        const rib = new THREE.Mesh(ribGeo, ribMat);
+                        rib.position.set(Math.cos(angle) * 0.75, 0.5 + Math.sin(angle) * 0.75, 0);
+                        rib.rotation.z = angle + Math.PI / 2;
+                        group.add(rib);
+                    }
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: fanFace
+                    };
+                } else if (type === 'brushPot') {
+                    group = new THREE.Group();
+                    const potGeo = new THREE.CylinderGeometry(0.8, 0.9, 1.8, 32, 1, true);
+                    const pot = new THREE.Mesh(potGeo, mat.clone());
+                    pot.position.y = 0.9;
+                    group.add(pot);
+                    mainMesh = pot;
+                    const bottomGeo = new THREE.CircleGeometry(0.85, 32);
+                    const bottom = new THREE.Mesh(bottomGeo, mat.clone());
+                    bottom.rotation.x = Math.PI / 2;
+                    bottom.position.y = 0;
+                    group.add(bottom);
+                    const rimGeo = new THREE.TorusGeometry(0.85, 0.05, 8, 32);
+                    const rimMat = new THREE.MeshStandardMaterial({
+                        color: 0x5e2e1c,
+                        roughness: 0.5
+                    });
+                    const rim = new THREE.Mesh(rimGeo, rimMat);
+                    rim.rotation.x = Math.PI / 2;
+                    rim.position.y = 1.8;
+                    group.add(rim);
+                    threeMesh = group;
+                    group.userData = {
+                        isGroup: true,
+                        mainMesh: mainMesh
+                    };
+                } else {
+                    const m = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), mat.clone());
+                    threeMesh = m;
+                }
+            }
+            scene.add(threeMesh);
+        }
+
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+            if (threeControls) threeControls.update();
+            if (threeRenderer && threeScene && threeCamera) threeRenderer.render(threeScene, threeCamera);
+        }
+
+        function disposeThreeResources() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (threeRenderer) {
+                threeRenderer.dispose();
+                threeRenderer.forceContextLoss();
+                threeRenderer = null;
+            }
+            threeScene = threeCamera = threeControls = threeMesh = threeGridHelper = null;
+        }
+
+        function calculatePrice() {
+            return 199.9;
+        }
+
+        function updatePriceUI() {
+            const priceEl = document.getElementById('dynamicPrice');
+            const modelLabelEl = document.getElementById('priceModelLabel');
+            const matLabelEl = document.getElementById('priceMatLabel');
+            if (priceEl) priceEl.innerText = calculatePrice();
+            if (modelLabelEl && modelBasePrices[currentModelType]) modelLabelEl.innerText = modelBasePrices[
+                currentModelType].name;
+            if (matLabelEl && materialPresets[currentMaterialType]) matLabelEl.innerText = materialPresets[
+                currentMaterialType].name;
+        }
+
+        function submitOrder() {
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const address = document.getElementById('customerAddress').value;
+            if (!name || !phone || !address) {
+                showToast('请填写完整的收货信息', '⚠️');
+                return;
+            }
+            const orderId = 'WX' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 1000);
+            const finalPrice = calculatePrice();
+            const modelName = modelBasePrices[currentModelType] ? modelBasePrices[currentModelType].name : '定制款';
+            const matName = materialPresets[currentMaterialType] ? materialPresets[currentMaterialType].name : '标准材质';
+            const detailsHtml =
+                `<p><strong>订单号：</strong> <span style="color:#D4B15B">${orderId}</span></p><p><strong>品名：</strong> · ${modelName}</p><p><strong>材质：</strong> ${matName}</p><p><strong>收件人：</strong> ${name}</p><p><strong>电话：</strong> ${phone}</p><p><strong>地址：</strong> ${address}</p><hr style="border-color: #444; margin: 10px 0;"><p style="text-align: right; font-size: 16px;"><strong>应付金额：</strong> <span style="color: #FFD700; font-size: 20px;">¥${finalPrice}</span></p>`;
+            document.getElementById('orderDetails').innerHTML = detailsHtml;
+            document.getElementById('orderModalOverlay').style.display = 'flex';
+        }
+        window.closeOrderModal = function() {
+            document.getElementById('orderModalOverlay').style.display = 'none';
+            showToast('请在个人中心查看订单进度', '📦');
+        };
+
+        async function show3DPreview() {
+            textureOffsetX = 0;
+            textureOffsetY = 0;
+            modalIsOpen = true;
+            const modal = document.getElementById('modal3d');
+            modal.style.display = 'flex';
+            const container = document.getElementById('threeCanvasContainer');
+            container.innerHTML = '';
+            const width = container.clientWidth,
+                height = container.clientHeight;
+            threeScene = new THREE.Scene();
+            threeScene.background = createRedGoldGradientTexture();
+            threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            threeCamera.position.set(0, 2, 5);
+            threeRenderer = new THREE.WebGLRenderer({
+                antialias: true,
+                preserveDrawingBuffer: true
+            });
+            threeRenderer.setSize(width, height);
+            threeRenderer.shadowMap.enabled = true;
+            container.appendChild(threeRenderer.domElement);
+            threeControls = new OrbitControls(threeCamera, threeRenderer.domElement);
+            threeControls.enableDamping = true;
+            threeControls.autoRotate = autoRotateFlag;
+            threeControls.autoRotateSpeed = currentRotateSpeed;
+
+            let ambientLight, dirLight, backLight;
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+            dirLight.position.set(5, 10, 7);
+            backLight = new THREE.PointLight(0xd4b15b, 0.6);
+            backLight.position.set(-2, 2, -3);
+            threeScene.add(ambientLight, dirLight, backLight);
+
+            threeGridHelper = new THREE.GridHelper(10, 10, 0x443322, 0x221110);
+            threeGridHelper.visible = false;
+            threeScene.add(threeGridHelper);
+            create3DModel('disc', threeScene);
+            animate();
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'three-controls-ui';
+            controlsDiv.innerHTML =
+                `<div class="tool-group"><div class="group-title"><i class="fas fa-palette"></i> 纹样同步</div><button id="syncTextureBtn">🔄 同步画布作品</button><button id="uploadCustomTextureBtn">📤 上传自定义素材</button><input type="file" id="customTextureInput" accept="image/*" style="display:none;"><div class="btn-row"><button id="cropCircleBtn">⚪ 圆形裁剪</button><button id="cropRectBtn">⬛ 矩形裁剪</button></div></div><div class="tool-group"><div class="group-title"><i class="fas fa-arrows-alt"></i> 纹样位置</div><label class="label">左右偏移 X</label><input type="range" id="textureOffsetX" min="-0.5" max="0.5" step="0.01" value="0"><label class="label">上下偏移 Y</label><input type="range" id="textureOffsetY" min="-0.5" max="0.5" step="0.01" value="0"></div><div class="tool-group"><div class="group-title"><i class="fas fa-vase"></i> 器型选择</div><select id="modelTypeSelect"><option value="disc" selected>圆盘/铜镜</option><option value="square">方形画框</option><option value="ding">🏺 方鼎</option><option value="fan">🎐 团扇(带柄)</option><option value="vase">🏺 花瓶</option><option value="gourd">🍐 葫芦</option><option value="lantern">🏮 灯笼</option><option value="cong">💎 玉琮</option><option value="ruyi">✨ 如意</option><option value="foldingFan">🪭 折扇</option><option value="brushPot">🖌️ 笔筒</option></select></div><div class="tool-group"><div class="group-title"><i class="fas fa-gem"></i> 材质调节</div><select id="materialPresetSelect">${Object.keys(materialPresets).map(k=>`<option value="${k}">${materialPresets[k].name}</option>`).join('')}</select><div class="custom-color-picker"><div class="color-preview-wrapper"><div class="color-preview-btn" id="colorPreviewBtn" style="background:#F5DEB3;">传统色</div><input type="color" class="color-input-native" id="customColorInput" value="#F5DEB3"></div><div id="colorPopover" class="color-popover"></div></div></div><div class="tool-group"><div class="group-title"><i class="fas fa-image"></i> 背景设置</div><select id="bgSelect">${Object.keys(bgPresets).map(k=>`<option value="${k}">${bgPresets[k].name}</option>`).join('')}</select></div><div class="tool-group"><div class="group-title"><i class="fas fa-lightbulb"></i> 灯光亮度</div><label class="label">亮度调节</label><input type="range" id="lightBrightness" min="0" max="2" step="0.1" value="1.0"></div><div class="tool-group"><div class="group-title"><i class="fas fa-camera"></i> 视角控制</div><div class="btn-row"><button id="toggleRotateBtn">⏸️ 暂停</button><button id="resetCameraBtn">🎯 复位</button></div><label class="label">旋转速度</label><input type="range" id="rotateSpeedSlider" min="0" max="5" step="0.1" value="1.5"><div class="btn-row"><button id="toggleGridBtn">▦ 网格</button><button id="export3DImgBtn">📸 导出高清作品</button></div></div><div class="tool-group" style="border-color: #C3272B; background: linear-gradient(135deg, rgba(195,39,43,0.2), rgba(0,0,0,0.3));"><div class="group-title" style="color: #FFD700;"><i class="fas fa-shopping-cart"></i> 文创定制 & 下单</div><div style="text-align: center; margin-bottom: 8px;"><div style="font-size: 11px; color: #aaa;">当前选择：<span id="priceModelLabel" style="color:#fff">圆盘</span> · <span id="priceMatLabel" style="color:#fff">宣纸</span></div><div class="price-tag"><small>预估</small> ¥<span id="dynamicPrice">99</span><small>.00</small></div></div><label class="label">收件人</label><input type="text" id="customerName" class="input-field" placeholder="请输入姓名"><label class="label" style="margin-top: 8px;">联系电话</label><input type="text" id="customerPhone" class="input-field" placeholder="请输入手机号"><label class="label" style="margin-top: 8px;">收货地址</label><input type="text" id="customerAddress" class="input-field" placeholder="省/市/区..."><button id="submitOrderBtn" class="btn-checkout" style="margin-top: 12px;"><i class="fas fa-paper-plane"></i> 提交定制订单</button></div>`;
+            container.appendChild(controlsDiv);
+            const traditionalColors = ['#C3272B', '#D4B15B', '#2F5D3A', '#1A3F5C', '#9B6A3C', '#E8C468', '#A5402D',
+                '#556B2F', '#FFE4B5', '#8B5A2B', '#B22222', '#FFD700', '#4682B4', '#228B22', '#800020', '#CD853F',
+                '#D2B48C', '#F5DEB3'
+            ];
+            const popover = controlsDiv.querySelector('#colorPopover');
+            popover.innerHTML = traditionalColors.map(c =>
+                `<div class="color-swatch" style="background:${c};" data-color="${c}"></div>`).join('');
+            const colorBtn = controlsDiv.querySelector('#colorPreviewBtn');
+            const customColorInput2 = controlsDiv.querySelector('#customColorInput');
+            colorBtn.onclick = (e) => {
+                e.stopPropagation();
+                popover.classList.toggle('active');
+            };
+            document.addEventListener('click', (e) => {
+                if (!popover.contains(e.target) && e.target !== colorBtn) popover.classList.remove('active');
+            });
+            popover.querySelectorAll('.color-swatch').forEach(sw => sw.addEventListener('click', (e) => {
+                let col = sw.dataset.color;
+                currentBaseColor = col;
+                colorBtn.style.background = col;
+                customColorInput2.value = col;
+                applyMaterialPreset(currentMaterialType, col);
+                popover.classList.remove('active');
+            }));
+            customColorInput2.addEventListener('input', (e) => {
+                let col = e.target.value;
+                currentBaseColor = col;
+                colorBtn.style.background = col;
+                applyMaterialPreset(currentMaterialType, col);
+            });
+            const modelSelect = controlsDiv.querySelector('#modelTypeSelect');
+            const materialSelect = controlsDiv.querySelector('#materialPresetSelect');
+            const bgSelect = controlsDiv.querySelector('#bgSelect');
+            const toggleRotate = controlsDiv.querySelector('#toggleRotateBtn');
+            const speedSlider = controlsDiv.querySelector('#rotateSpeedSlider');
+            const syncTexBtn = controlsDiv.querySelector('#syncTextureBtn');
+            const gridBtn = controlsDiv.querySelector('#toggleGridBtn');
+            const resetCam = controlsDiv.querySelector('#resetCameraBtn');
+            const cropCircleBtn = controlsDiv.querySelector('#cropCircleBtn');
+            const cropRectBtn = controlsDiv.querySelector('#cropRectBtn');
+            const export3DImgBtn = controlsDiv.querySelector('#export3DImgBtn');
+            const offsetXSlider = controlsDiv.querySelector('#textureOffsetX');
+            const offsetYSlider = controlsDiv.querySelector('#textureOffsetY');
+            const submitOrderBtn = controlsDiv.querySelector('#submitOrderBtn');
+            const lightBrightnessSlider = controlsDiv.querySelector('#lightBrightness');
+            const uploadCustomTextureBtn = controlsDiv.querySelector('#uploadCustomTextureBtn');
+            const customTextureInput = controlsDiv.querySelector('#customTextureInput');
+
+            offsetXSlider.value = 0;
+            offsetYSlider.value = 0;
+            updatePriceUI();
+            modelSelect.addEventListener('change', (e) => {
+                currentModelType = e.target.value;
+                create3DModel(currentModelType, threeScene);
+                applyMaterialPreset(materialSelect.value, currentBaseColor);
+                if (currentModelType === 'disc') {
+                    textureOffsetX = 0;
+                    textureOffsetY = 0;
+                    offsetXSlider.value = 0;
+                    offsetYSlider.value = 0;
+                    updateTextureOffset();
+                }
+                syncCanvasTo3D();
+                updatePriceUI();
+            });
+            materialSelect.addEventListener('change', (e) => {
+                currentMaterialType = e.target.value;
+                applyMaterialPreset(currentMaterialType, currentBaseColor);
+                updatePriceUI();
+            });
+            bgSelect.addEventListener('change', (e) => {
+                const val = bgPresets[e.target.value];
+                threeScene.background = val.type === 'gradient' ? createRedGoldGradientTexture() : new THREE.Color(
+                    val.value);
+            });
+            toggleRotate.addEventListener('click', () => {
+                autoRotateFlag = !autoRotateFlag;
+                threeControls.autoRotate = autoRotateFlag;
+                toggleRotate.innerHTML = autoRotateFlag ? '⏸️ 暂停' : '▶️ 播放';
+            });
+            speedSlider.addEventListener('input', (e) => {
+                currentRotateSpeed = parseFloat(e.target.value);
+                threeControls.autoRotateSpeed = currentRotateSpeed;
+            });
+            syncTexBtn.addEventListener('click', syncCanvasTo3D);
+            cropCircleBtn.addEventListener('click', () => applyCropToTexture('circle'));
+            cropRectBtn.addEventListener('click', () => applyCropToTexture('rect'));
+            gridBtn.addEventListener('click', () => {
+                threeGridHelper.visible = !threeGridHelper.visible;
+            });
+            resetCam.addEventListener('click', () => {
+                threeCamera.position.set(0, 2, 5);
+                threeControls.reset();
+            });
+            export3DImgBtn.addEventListener('click', () => {
+                threeRenderer.render(threeScene, threeCamera);
+                const link = document.createElement('a');
+                link.download = '3D文创作品.png';
+                link.href = threeRenderer.domElement.toDataURL('image/png', 1.0);
+                link.click();
+                showToast('3D高清作品已导出', '🏺');
+            });
+            offsetXSlider.addEventListener('input', (e) => {
+                textureOffsetX = parseFloat(e.target.value);
+                updateTextureOffset();
+            });
+            offsetYSlider.addEventListener('input', (e) => {
+                textureOffsetY = parseFloat(e.target.value);
+                updateTextureOffset();
+            });
+            submitOrderBtn.addEventListener('click', submitOrder);
+            applyMaterialPreset('paper', currentBaseColor);
+            await syncCanvasTo3D();
+            updateTextureOffset();
+
+            lightBrightnessSlider.addEventListener('input', (e) => {
+                const brightness = parseFloat(e.target.value);
+                ambientLight.intensity = 0.8 * brightness;
+                dirLight.intensity = 1.2 * brightness;
+                backLight.intensity = 0.6 * brightness;
+            });
+
+            uploadCustomTextureBtn.addEventListener('click', () => customTextureInput.click());
+            customTextureInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        const imgUrl = ev.target.result;
+                        applyTextureTo3D(imgUrl);
+                        showToast('自定义素材已应用到3D模型', '📤');
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (!modalIsOpen) return;
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                threeCamera.aspect = w / h;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(w, h);
+            });
+        }
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            modalIsOpen = false;
+            document.getElementById('modal3d').style.display = 'none';
+            disposeThreeResources();
+        });
+        document.getElementById('preview3DBtn').addEventListener('click', show3DPreview);
+
+        function calculatePlatformPrice() {
+            return 19.9;
+        }
+
+        function refreshAutoPrice() {
+            const price = calculatePlatformPrice();
+            document.getElementById('autoPrice').innerText = `¥${price}`;
+        }
+
+        document.getElementById('previewWorkBtn').addEventListener('click', () => {
+            const workName = document.getElementById('workName').value;
+            if (!workName) {
+                showToast('请先填写作品名称', '⚠️');
+                return;
+            }
+            const imgData = canvasEl.toDataURL({
+                format: 'png',
+                multiplier: 1.5
+            });
+            document.getElementById('workPreviewImg').src = imgData;
+            showToast('作品预览生成成功', '👁️');
+        });
+
+        document.getElementById('uploadWorkBtn').addEventListener('click', () => {
+            const workName = document.getElementById('workName').value;
+            const workCategory = document.getElementById('workCategory').value;
+            const workDesc = document.getElementById('workDesc').value;
+            const workPrice = calculatePlatformPrice();
+
+            if (!workName) {
+                showToast('请填写作品名称', '⚠️');
+                return;
+            }
+            if (workDesc.length < 10) {
+                showToast('作品描述至少10个字', '⚠️');
+                return;
+            }
+
+            const workId = 'ZP' + Date.now().toString().slice(-10);
+            const categoryMap = {
+                heritage: '非遗典藏',
+                festival: '节日喜庆',
+                decor: '家居装饰',
+                gift: '文创礼品',
+                custom: '私人定制'
+            };
+            const categoryName = categoryMap[workCategory];
+            const imgData = canvasEl.toDataURL({
+                format: 'png',
+                multiplier: 2
+            });
+
+            document.getElementById('workPreviewImg').src = imgData;
+            document.getElementById('uploadWorkInfo').innerHTML = `
+            <p><strong>作品ID：</strong> ${workId}</p>
+            <p><strong>作品名称：</strong> ${workName}</p>
+            <p><strong>作品分类：</strong> ${categoryName}</p>
+            <p><strong>作品售价：</strong> ¥${workPrice}</p>
+            <p><strong>状态：</strong> <span style="color:#C3272B; font-weight:bold;">待制作发货</span></p>
+            <p><strong>说明：</strong> 平台将根据您的作品进行手工制作，完成后通过物流发送至您预留的地址</p>
+          `;
+
+            document.getElementById('uploadModalOverlay').style.display = 'flex';
+            showToast('作品上传成功，已上架平台', '✅');
+        });
+
+        window.closeUploadModal = function() {
+            document.getElementById('uploadModalOverlay').style.display = 'none';
+            document.getElementById('workName').value = '';
+            document.getElementById('workDesc').value = '';
+        }
+
+        window.addEventListener('load', () => {
+            refreshAutoPrice();
+            sizeSelect.addEventListener('change', refreshAutoPrice);
+            canvasEl.on('object:added', refreshAutoPrice);
+            canvasEl.on('object:removed', refreshAutoPrice);
+        });
+
+        const draftPanel = document.getElementById('draftPanel');
+        const draftHeader = document.getElementById('draftHeader');
+        const draftList = document.getElementById('draftList');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+
+        draftHeader.addEventListener('click', () => {
+            draftPanel.classList.toggle('collapsed');
+        });
+
+        function getDrafts() {
+            const drafts = localStorage.getItem('papercutDrafts');
+            return drafts ? JSON.parse(drafts) : [];
+        }
+
+        function saveDraft() {
+            const drafts = getDrafts();
+            const canvasData = canvasEl.toJSON();
+            const now = new Date();
+            const timeStr =
+                `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            const draft = {
+                id: Date.now(),
+                name: `草稿_${timeStr}`,
+                data: canvasData,
+                time: now.toLocaleString()
+            };
+            drafts.unshift(draft);
+            if (drafts.length > 10) drafts.pop();
+            localStorage.setItem('papercutDrafts', JSON.stringify(drafts));
+            renderDraftList();
+            showToast('草稿保存成功', '💾');
+        }
+
+        function renderDraftList() {
+            const drafts = getDrafts();
+            draftList.innerHTML = '';
+            if (drafts.length === 0) {
+                draftList.innerHTML = '<div class="draft-empty">暂无草稿记录</div>';
+                return;
+            }
+            drafts.forEach(draft => {
+                const item = document.createElement('div');
+                item.className = 'draft-item';
+                item.innerHTML = `
+              <div class="draft-item-name" title="${draft.name}">${draft.name}</div>
+              <div class="draft-item-actions">
+                <button class="draft-item-btn load" data-id="${draft.id}"><i class="fas fa-download"></i></button>
+                <button class="draft-item-btn del" data-id="${draft.id}"><i class="fas fa-trash"></i></button>
+              </div>
+            `;
+                draftList.appendChild(item);
+            });
+
+            document.querySelectorAll('.draft-item-btn.load').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    const drafts = getDrafts();
+                    const draft = drafts.find(d => d.id === id);
+                    if (draft) {
+                        canvasEl.loadFromJSON(draft.data, () => {
+                            canvasEl.renderAll();
+                            sync3DIfOpen();
+                            showToast('草稿加载成功', '📂');
+                        });
+                    }
+                });
+            });
+
+            document.querySelectorAll('.draft-item-btn.del').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    let drafts = getDrafts();
+                    drafts = drafts.filter(d => d.id !== id);
+                    localStorage.setItem('papercutDrafts', JSON.stringify(drafts));
+                    renderDraftList();
+                    showToast('草稿已删除', '🗑️');
+                });
+            });
+        }
+
+        saveDraftBtn.addEventListener('click', saveDraft);
+        window.addEventListener('load', renderDraftList);
+    </script>
+</body>
+</html>
